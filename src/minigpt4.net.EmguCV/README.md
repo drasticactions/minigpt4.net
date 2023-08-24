@@ -1,0 +1,1 @@
+# minigpt4.net.EmguCV - Image Processing for minigpt4.net, based on EmguCV
