@@ -7,14 +7,15 @@ public class MiniGpt4 : IDisposable
 {
     private IntPtr ctx;
     private IImageProcessing processing;
-    
-    public MiniGpt4(MiniGpt4Options options) : this(options, new EmbeddedOpenCVImageProcessing())
+
+    public MiniGpt4(MiniGpt4ModelOptions options)
+        : this(options, new EmbeddedOpenCVImageProcessing())
     {
     }
-    
-    public MiniGpt4(MiniGpt4Options options, IImageProcessing processing)
+
+    public MiniGpt4(MiniGpt4ModelOptions options, IImageProcessing processing)
     {
-        this.Options = options;
+        this.ModelOptions = options;
         this.processing = processing;
         this.ctx = NativeMethods.minigpt4_model_load(options.Model, options.LlmModel, (int)options.Verbose,
             options.Seed, options.NCtx,
@@ -24,26 +25,27 @@ public class MiniGpt4 : IDisposable
     /// <summary>
     /// Gets the MiniGpt4Options.
     /// </summary>
-    public MiniGpt4Options Options { get; internal set; }
+    public MiniGpt4ModelOptions ModelOptions { get; internal set; }
 
     public void Dispose()
     {
         NativeMethods.Free(this.ctx);
     }
 
-    public IAsyncEnumerable<string> ChatImageAsync(string imagePath, string text, CancellationToken? cancellationToken = default)
+    public IAsyncEnumerable<string> ChatImageAsync(string imagePath, string text, MiniGpt4Options? options = default, CancellationToken? cancellationToken = default)
     {
-        NativeMethods.SystemPrompt(ctx, this.Options.Threads).ThrowIfError();
+        options = options ?? new MiniGpt4Options();
+        NativeMethods.SystemPrompt(ctx, options.Threads).ThrowIfError();
         var imageObj = this.processing.LoadImage(this.ctx, imagePath);
-        var preprocessedImage = this.processing.PreprocessImage(this.ctx, imageObj);
-        var embedding = this.processing.EncodeImage(this.ctx, preprocessedImage);
-        return this.ChatImageAsync(embedding, text, cancellationToken);
+        var embedding = this.processing.EncodeImage(this.ctx, imageObj);
+        return this.ChatImageAsync(embedding, text, options, cancellationToken);
     }
 
-    public async IAsyncEnumerable<string> ChatImageAsync(NativeMethods.MiniGPT4Embedding imageEmbedding, string text, CancellationToken? cancellationToken = default)
+    public async IAsyncEnumerable<string> ChatImageAsync(NativeMethods.MiniGPT4Embedding imageEmbedding, string text, MiniGpt4Options? options = default, CancellationToken? cancellationToken = default)
     {
-        NativeMethods.SystemPrompt(ctx, this.Options.Threads).ThrowIfError();
-        NativeMethods.BeginChatImage(ctx, ref imageEmbedding, text, this.Options.Threads).ThrowIfError();
+        options = options ?? new MiniGpt4Options();
+        NativeMethods.SystemPrompt(ctx, options.Threads).ThrowIfError();
+        NativeMethods.BeginChatImage(ctx, ref imageEmbedding, text, options.Threads).ThrowIfError();
 
         IntPtr token = IntPtr.Zero;
         StringBuilder response = new StringBuilder();
@@ -56,20 +58,21 @@ public class MiniGpt4 : IDisposable
                 yield return Marshal.PtrToStringAnsi(token);
             }
 
-            NativeMethods.EndChatImage(ctx, out token, this.Options.Threads,
-                this.Options.Temperature, this.Options.TopK, this.Options.TopP, this.Options.TfsZ,
-                this.Options.TypicalP, this.Options.RepeatLastN, this.Options.RepeatPenalty, this.Options.AlphaPresence,
-                this.Options.AlphaFrequency, this.Options.Mirostat, this.Options.MirostatTau, this.Options.MirostatEta,
-                this.Options.PenalizeNl).ThrowIfError();
+            NativeMethods.EndChatImage(ctx, out token, options.Threads,
+                options.Temperature, options.TopK, options.TopP, options.TfsZ,
+                options.TypicalP, options.RepeatLastN, options.RepeatPenalty, options.AlphaPresence,
+                options.AlphaFrequency, options.Mirostat, options.MirostatTau, options.MirostatEta,
+                options.PenalizeNl).ThrowIfError();
 
             response.Append(Marshal.PtrToStringAnsi(token));
             yield return Marshal.PtrToStringAnsi(token);
         } while (NativeMethods.IsEOS(response.ToString()) == 0);
     }
 
-    public async IAsyncEnumerable<string> ChatAsync(string text, CancellationToken? cancellationToken = default)
+    public async IAsyncEnumerable<string> ChatAsync(string text, MiniGpt4Options? options = default, CancellationToken? cancellationToken = default)
     {
-        NativeMethods.BeginChat(ctx, text, this.Options.Threads).ThrowIfError();
+        options = options ?? new MiniGpt4Options();
+        NativeMethods.BeginChat(ctx, text, options.Threads).ThrowIfError();
         IntPtr token = IntPtr.Zero;
         StringBuilder response = new StringBuilder();
         do
@@ -81,11 +84,11 @@ public class MiniGpt4 : IDisposable
                 yield return Marshal.PtrToStringAnsi(token);
             }
 
-            NativeMethods.EndChat(ctx, out token, this.Options.Threads,
-                this.Options.Temperature, this.Options.TopK, this.Options.TopP, this.Options.TfsZ,
-                this.Options.TypicalP, this.Options.RepeatLastN, this.Options.RepeatPenalty, this.Options.AlphaPresence,
-                this.Options.AlphaFrequency, this.Options.Mirostat, this.Options.MirostatTau, this.Options.MirostatEta,
-                this.Options.PenalizeNl).ThrowIfError();
+            NativeMethods.EndChat(ctx, out token, options.Threads,
+                options.Temperature, options.TopK, options.TopP, options.TfsZ,
+                options.TypicalP, options.RepeatLastN, options.RepeatPenalty, options.AlphaPresence,
+                options.AlphaFrequency, options.Mirostat, options.MirostatTau, options.MirostatEta,
+                options.PenalizeNl).ThrowIfError();
 
             response.Append(Marshal.PtrToStringAnsi(token));
             yield return Marshal.PtrToStringAnsi(token);

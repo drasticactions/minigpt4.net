@@ -5,10 +5,10 @@ public class EmbeddedOpenCVImageProcessing : IImageProcessing
     public NativeMethods.MiniGPT4Image LoadImage(IntPtr ctx, string path)
     {
         NativeMethods.ImageLoadFromFile(ctx, path, out var img,0).ThrowIfError();
-        return img;
+        return this.PreprocessImage(ctx, img);
     }
 
-    public NativeMethods.MiniGPT4Image PreprocessImage(IntPtr ctx, NativeMethods.MiniGPT4Image image)
+    private NativeMethods.MiniGPT4Image PreprocessImage(IntPtr ctx, NativeMethods.MiniGPT4Image image)
     {
         NativeMethods.PreprocessImage(ctx, ref image, out var preprocessedImage, 0).ThrowIfError();
         return preprocessedImage;
