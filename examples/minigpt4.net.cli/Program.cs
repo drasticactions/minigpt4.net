@@ -124,7 +124,7 @@ class Program
     static async Task RunWithOptions(Options options)
     {
         var miniGpt4Options = options.GenerateModelOptions();
-        var miniGpt4 = new MiniGpt4(miniGpt4Options, new EmguCVImageProcessing());
+        var miniGpt4 = new MiniGpt4(miniGpt4Options, new OpenCVSharpImageProcessing());
         var result = miniGpt4.ChatImageAsync(options.Image, options.Texts.First());
         await foreach (var response in result)
         {

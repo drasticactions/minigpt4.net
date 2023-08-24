@@ -12,12 +12,6 @@ namespace minigpt4.net;
 
 public class EmguCVImageProcessing : IImageProcessing
 {
-    public NativeMethods.MiniGPT4Embedding EncodeImage(nint ctx, NativeMethods.MiniGPT4Image image)
-    {
-        NativeMethods.EncodeImage(ctx, ref image, out var embedding, IntPtr.Zero).ThrowIfError();
-        return embedding;
-    }
-
     public NativeMethods.MiniGPT4Image LoadImage(nint ctx, string path)
     {
         int IMAGE_RESIZE = 224;
@@ -28,11 +22,14 @@ public class EmguCVImageProcessing : IImageProcessing
 
         Mat m2 = new Mat();
         CvInvoke.Resize(m, m2, new Size(IMAGE_RESIZE, IMAGE_RESIZE), 0, 0, Inter.Linear);
-        MCvScalar mean = new MCvScalar(0.48145466, 0.4578275, 0.40821073);
-        MCvScalar std = new MCvScalar(0.26862954, 0.26130258, 0.27577711);
 
         m2.ConvertTo(m2, DepthType.Cv32F, 1.0 / 255.0);
-        CvInvoke.MeanStdDev(m2, ref mean, ref std);
+        using (ScalarArray mean = new ScalarArray(new MCvScalar(0.48145466, 0.4578275, 0.40821073)))
+        using (ScalarArray std = new ScalarArray(new MCvScalar(0.26862954, 0.26130258, 0.27577711)))
+        {
+            CvInvoke.Subtract(m2, mean, m2);
+            CvInvoke.Divide(m2, std, m2);
+        }
 
         VectorOfMat channels = new VectorOfMat();
         CvInvoke.Split(m2, channels);

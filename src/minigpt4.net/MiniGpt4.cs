@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using System.Text;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace minigpt4.net;
 
@@ -37,7 +38,7 @@ public class MiniGpt4 : IDisposable
         options = options ?? new MiniGpt4Options();
         NativeMethods.SystemPrompt(ctx, options.Threads).ThrowIfError();
         var imageObj = this.processing.LoadImage(this.ctx, imagePath);
-        var embedding = this.processing.EncodeImage(this.ctx, imageObj);
+        NativeMethods.EncodeImage(ctx, ref imageObj, out var embedding, IntPtr.Zero).ThrowIfError();
         return this.ChatImageAsync(embedding, text, options, cancellationToken);
     }
 
