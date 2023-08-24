@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 using CommandLine;
@@ -126,9 +127,14 @@ class Program
         var miniGpt4Options = options.GenerateModelOptions();
         var miniGpt4 = new MiniGpt4(miniGpt4Options, new OpenCVSharpImageProcessing());
         var result = miniGpt4.ChatImageAsync(options.Image, options.Texts.First());
+        Directory.CreateDirectory("output");
+        using var textWriter = new StreamWriter(Path.Combine("output", $"{DateTime.UtcNow.ToString("yyyy-dd-M")}.txt"), true);
         await foreach (var response in result)
         {
             Console.Write(response);
+            textWriter.Write(response);
         }
+
+        textWriter.Flush();
     }
 }

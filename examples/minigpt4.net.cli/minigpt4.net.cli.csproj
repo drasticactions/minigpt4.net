@@ -8,6 +8,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\..\src\minigpt4.net.EmguCV\minigpt4.net.EmguCV.csproj" />
 		<ProjectReference Include="..\..\src\minigpt4.net.OpenCVSharp\minigpt4.net.OpenCVSharp.csproj" />
 		<ProjectReference Include="..\..\src\minigpt4.net\minigpt4.net.csproj" />
 	</ItemGroup>
